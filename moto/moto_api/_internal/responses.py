@@ -1,4 +1,5 @@
 import json
+import os
 from typing import Any
 
 from botocore.awsrequest import AWSPreparedRequest
@@ -7,6 +8,19 @@ from moto import settings
 from moto.core import DEFAULT_ACCOUNT_ID
 from moto.core.common_types import TYPE_RESPONSE
 from moto.core.responses import ActionAuthenticatorMixin, BaseResponse
+
+# Compiled from the React app in /dashboard (`make dashboard`)
+DASHBOARD_DIR = os.path.join(
+    os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))),
+    "moto_server",
+    "dashboard",
+)
+DASHBOARD_ASSET_TYPES = {
+    ".css": "text/css; charset=utf-8",
+    ".js": "text/javascript; charset=utf-8",
+    ".woff": "font/woff",
+    ".woff2": "font/woff2",
+}
 
 
 class MotoAPIResponse(BaseResponse):
@@ -68,12 +82,16 @@ class MotoAPIResponse(BaseResponse):
                     inst_result = {}
                     for attr in dir(instance):
                         if not attr.startswith("_"):
+                            # Any property can raise anything (a LambdaFunction's
+                            # docker_client needs a reachable Docker daemon), and
+                            # one bad attribute must not take down the whole response.
                             try:
-                                json.dumps(getattr(instance, attr))
-                            except (TypeError, AttributeError, ValueError):
+                                value = getattr(instance, attr)
+                                json.dumps(value)
+                            except Exception:
                                 pass
                             else:
-                                inst_result[attr] = getattr(instance, attr)
+                                inst_result[attr] = value
                     results[service][name].append(inst_result)
         return 200, {"Content-Type": "application/javascript"}, json.dumps(results)
 
@@ -82,20 +100,36 @@ class MotoAPIResponse(BaseResponse):
         request: Any,
         full_url: str,
         headers: Any,
-    ) -> str:
-        from flask import render_template
+    ) -> TYPE_RESPONSE:
+        with open(os.path.join(DASHBOARD_DIR, "index.html"), "rb") as file:
+            content = file.read()
+        return (
+            200,
+            {"Content-Type": "text/html; charset=utf-8", "Cache-Control": "no-cache"},
+            content,
+        )
 
-        return render_template("dashboard.html")
-
-    def lib_js(
+    def dashboard_asset(
         self,
         request: Any,
         full_url: str,
         headers: Any,
-    ) -> str:
-        from flask import render_template
-
-        return render_template("lib.js")
+    ) -> TYPE_RESPONSE:
+        name = full_url.split("?")[0].rsplit("/", 1)[-1]
+        assets_dir = os.path.join(DASHBOARD_DIR, "assets")
+        content_type = DASHBOARD_ASSET_TYPES.get(os.path.splitext(name)[1])
+        # Matching against the directory listing also rules out path traversal
+        if content_type is None or name not in os.listdir(assets_dir):
+            return 404, {}, json.dumps({"Error": f"Unknown asset: {name}"})
+        with open(os.path.join(assets_dir, name), "rb") as file:
+            content = file.read()
+        # Asset file names contain a hash of their content
+        cache_control = "public, max-age=31536000, immutable"
+        return (
+            200,
+            {"Content-Type": content_type, "Cache-Control": cache_control},
+            content,
+        )
 
     def get_transition(
         self,

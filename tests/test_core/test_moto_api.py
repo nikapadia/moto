@@ -1,5 +1,8 @@
 import json
+import re
+from typing import Any
 from unittest import SkipTest, TestCase
+from unittest.mock import patch
 
 import boto3
 import pytest
@@ -8,6 +11,8 @@ from botocore.exceptions import ClientError
 
 from moto import mock_aws, settings
 from moto.core.model_instances import model_data, reset_model_data
+from moto.server import create_backend_app
+from moto.sqs.models import Queue
 
 base_url = (
     "http://localhost:5000"
@@ -38,6 +43,71 @@ def test_data_api() -> None:
     assert len(queues) == 1
     queue = queues[0]
     assert queue["name"] == "queue1"
+
+
+@mock_aws
+def test_data_api__attribute_that_raises_is_left_out() -> None:
+    if settings.TEST_SERVER_MODE:
+        raise SkipTest("Can't patch the model of a separate server process")
+    conn = boto3.client("sqs", region_name="us-west-1")
+    conn.create_queue(QueueName="queue1")
+
+    def explode(self: Queue) -> None:
+        # Such as a LambdaFunction's docker_client, without a Docker daemon
+        raise RuntimeError("Not available")
+
+    with patch.object(Queue, "exploding", property(explode), create=True):
+        queues = requests.post(data_url).json()["sqs"]["Queue"]
+
+    assert queues[0]["name"] == "queue1"
+    assert "exploding" not in queues[0]
+
+
+def dashboard_client() -> Any:
+    return create_backend_app("moto_api").test_client()
+
+
+def test_dashboard_is_served() -> None:
+    res = dashboard_client().get("/moto-api/")
+
+    assert res.status_code == 200
+    assert res.headers["Content-Type"].startswith("text/html")
+    assert b'<div id="root">' in res.data
+
+
+def test_dashboard_assets_are_served_with_their_type() -> None:
+    client = dashboard_client()
+    index = client.get("/moto-api/").data.decode("utf-8")
+
+    paths = re.findall(r'"(/moto-api/assets/[^"]+)"', index)
+    assert sorted(path.rsplit(".", 1)[-1] for path in paths) == ["css", "js"]
+
+    for path in paths:
+        res = client.get(path)
+        assert res.status_code == 200
+        assert res.content_type.split(";")[0] in ["text/css", "text/javascript"]
+        assert "immutable" in res.headers["Cache-Control"]
+
+    stylesheet = next(path for path in paths if path.endswith(".css"))
+    fonts = re.findall(
+        r"/moto-api/assets/[^)\"\']+\.woff2",
+        client.get(stylesheet).data.decode("utf-8"),
+    )
+    assert fonts
+    for font in fonts:
+        res = client.get(font)
+        assert res.status_code == 200
+        assert res.content_type == "font/woff2"
+
+
+@pytest.mark.parametrize(
+    "name",
+    ["missing.js", "index.html", "OFL.txt", "..%2findex.html", "%2e%2e%2fOFL.txt"],
+)
+def test_dashboard_assets_are_limited_to_the_assets_folder(name: str) -> None:
+    res = dashboard_client().get(f"/moto-api/assets/{name}")
+
+    assert res.status_code == 404
 
 
 @mock_aws

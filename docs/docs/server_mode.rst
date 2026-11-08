@@ -237,9 +237,15 @@ It is possible to keep the state in between tests, using this environment variab
 Dashboard
 ---------
 
-Moto comes with a dashboard to view the current state of the system::
+Moto comes with a dashboard to browse everything that has been deployed::
 
     http://localhost:5000/moto-api/
+
+It lists your resources by service, searches across all of their values, and shows the details of each one, with links to the other resources it refers to. Resources that Moto creates by itself, such as sample AMIs and default VPCs, are hidden unless you tick *Built-in*.
+
+The data behind the dashboard is available as JSON at ``/moto-api/data.json``.
+
+The dashboard is a React app, with its source in the ``dashboard`` folder of the repository. To change it, edit the source and run ``make dashboard`` to rebuild the compiled files in ``moto/moto_server/dashboard``. Run ``npm run dev`` in that folder for a live-reloading version, which reads its data from a Moto server on port 5000.
 
 
 Reset API

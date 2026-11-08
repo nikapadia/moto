@@ -1,0 +1,144 @@
+@import "tailwindcss";
+
+/* Design tokens. Everything else is styled with Tailwind utilities in the components. */
+
+:root {
+  color-scheme: light;
+  --ink: #1d2023;
+  --ink-soft: #565b60;
+  --sheet: #fafaf7;
+  --concrete: #e6e7e2;
+  --rule: #c9cbc4;
+  --reference: #0a58b8;
+  --good: #14703f;
+  --warn: #9a5200;
+  --bad: #b3261e;
+  --rail: #f6c700;
+  --rail-ink: #000;
+  --rail-hover: rgb(0 0 0 / 10%);
+  --rail-current: #000;
+  --rail-current-ink: #f6c700;
+  --marker-ring: #000;
+  --marker-fill: #f6c700;
+  --selected: #fff6c9;
+  --flash: #ffe566;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --ink: #ecede8;
+    --ink-soft: #a9adaa;
+    --sheet: #24272a;
+    --concrete: #33373b;
+    --rule: #484d51;
+    --reference: #8fc1ff;
+    --good: #6fd29c;
+    --warn: #f0b264;
+    --bad: #ff9c94;
+    --rail: #2d3135;
+    --rail-ink: #ecede8;
+    --rail-hover: rgb(255 255 255 / 9%);
+    --rail-current: #f6c700;
+    --rail-current-ink: #000;
+    --marker-ring: #f6c700;
+    --marker-fill: #000;
+    --selected: #4a4522;
+    --flash: #7d6c10;
+  }
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --ink: #ecede8;
+  --ink-soft: #a9adaa;
+  --sheet: #24272a;
+  --concrete: #33373b;
+  --rule: #484d51;
+  --reference: #8fc1ff;
+  --good: #6fd29c;
+  --warn: #f0b264;
+  --bad: #ff9c94;
+  --rail: #2d3135;
+  --rail-ink: #ecede8;
+  --rail-hover: rgb(255 255 255 / 9%);
+  --rail-current: #f6c700;
+  --rail-current-ink: #000;
+  --marker-ring: #f6c700;
+  --marker-fill: #000;
+  --selected: #4a4522;
+  --flash: #7d6c10;
+}
+
+@theme inline {
+  --color-ink: var(--ink);
+  --color-ink-soft: var(--ink-soft);
+  --color-sheet: var(--sheet);
+  --color-concrete: var(--concrete);
+  --color-rule: var(--rule);
+  --color-reference: var(--reference);
+  --color-good: var(--good);
+  --color-warn: var(--warn);
+  --color-bad: var(--bad);
+  --color-rail: var(--rail);
+  --color-rail-ink: var(--rail-ink);
+  --color-rail-hover: var(--rail-hover);
+  --color-rail-current: var(--rail-current);
+  --color-rail-current-ink: var(--rail-current-ink);
+  --color-marker-ring: var(--marker-ring);
+  --color-marker-fill: var(--marker-fill);
+  --color-selected: var(--selected);
+  --color-flash: var(--flash);
+}
+
+@theme {
+  --color-marker: #f6c700;
+
+  --font-display: "Barlow Condensed", "Arial Narrow", "Roboto Condensed", sans-serif;
+  --font-body: "Barlow", "Helvetica Neue", Arial, sans-serif;
+  --font-mono: ui-monospace, "SF Mono", "Cascadia Code", Menlo, Consolas, monospace;
+
+  --text-label: 0.8125rem;
+  --text-body: 0.9375rem;
+  --text-lead: 1.125rem;
+  --text-h3: 1.75rem;
+  --text-h2: 2.25rem;
+  --text-h1: 3.25rem;
+
+  --animate-flash: flash 2.4s ease-out;
+  --animate-inspector: inspector 120ms ease-out;
+
+  @keyframes flash {
+    from {
+      background-color: var(--flash);
+    }
+  }
+
+  @keyframes inspector {
+    from {
+      transform: translateX(0.75rem);
+      opacity: 0;
+    }
+  }
+}
+
+@layer base {
+  body {
+    background: var(--sheet);
+    color: var(--ink);
+    font-family: var(--font-body);
+    font-size: var(--text-body);
+    line-height: 1.45;
+    font-variant-numeric: tabular-nums;
+  }
+
+  :focus-visible {
+    outline: 2px solid currentcolor;
+    outline-offset: 2px;
+  }
+
+  mark {
+    background: var(--color-marker);
+    color: #000;
+  }
+}

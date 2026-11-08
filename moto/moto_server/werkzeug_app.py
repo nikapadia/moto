@@ -1,6 +1,4 @@
 import io
-import os
-import os.path
 from collections.abc import Callable
 from threading import Lock
 from typing import Any
@@ -389,12 +387,8 @@ class DomainDispatcherApplication:
 def create_backend_app(service: backends.SERVICE_NAMES) -> Flask:
     from werkzeug.routing import Map
 
-    current_file = os.path.abspath(__file__)
-    current_dir = os.path.abspath(os.path.join(current_file, os.pardir))
-    template_dir = os.path.join(current_dir, "templates")
-
     # Create the backend_app
-    backend_app = Flask("moto", template_folder=template_dir)
+    backend_app = Flask("moto")
     backend_app.debug = True
     backend_app.service = service  # type: ignore[attr-defined]
 

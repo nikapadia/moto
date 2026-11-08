@@ -17,6 +17,12 @@ init:
 	@pip install -e .
 	@pip install -r requirements-dev.txt
 
+.PHONY: dashboard
+
+# Compiles the React app in dashboard/ into moto/moto_server/dashboard, which is committed
+dashboard:
+	cd dashboard && npm ci && npm test && npm run build
+
 lint:
 	@echo "Running ruff..."
 	ruff check moto tests
